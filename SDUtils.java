@@ -67,7 +67,7 @@ public class SDUtils {
 		ShellUtils.runProcess("tar -zcvf \""+cachePath+"/"+thisTimestamp+"-Struct.tar.gz\" "+cachePath+"/SQLDumps/*");
 		File sqlCacheFolder = new File(cachePath+"/SQLDumps");
 		ShellUtils.deleteDir(sqlCacheFolder);		
-		ShellUtils.runProcess("gpg --output \""+usbDrivePath+"/[data]/Tools/SQL/Backup/"+thisTimestamp+"-Struct.tar.gz.gpg\" --encrypt --recipient f00dl3a@gmail.com \""+cachePath+"/"+thisTimestamp+"-Struct.tar.gz\"");
+		ShellUtils.runProcess("gpg --output \""+usbDrivePath+"/[data]/Tools/SQL/Backup/"+thisTimestamp+"-Struct.tar.gz.gpg\" --encrypt --recipient (me) \""+cachePath+"/"+thisTimestamp+"-Struct.tar.gz\"");
 		File unEncDbBU = new File(cachePath+"/"+thisTimestamp+"-Struct.tar.gz");
 		unEncDbBU.delete();
 
