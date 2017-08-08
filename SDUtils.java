@@ -79,7 +79,7 @@ public class SDUtils {
 		ShellUtils.runProcess("(ls /home/astump/USB-Back/* -t | head -n 4; ls /home/astump/USB-Back/*)|sort|uniq -u|xargs rm");
 
 		System.out.println("Writing log into database...");
-		String usbBackSizeKB = Long.toString(new File("/home/astump/USB-Back/1708061140.tar.gz").length()/1024);
+		String usbBackSizeKB = Long.toString(new File("/home/astump/USB-Back/"+thisTimestamp+".tar.gz").length()/1024);
 		String updateQuery = "INSERT INTO Core.Log_SDUtils (Date,Time,Notes,ZIPSize) VALUES (CURDATE(),CURTIME(),'Ran "+build+" Modified "+updated+"',"+usbBackSizeKB+");";		
 		try (
 			Connection conn = MyDBConnector.getMyConnection();
