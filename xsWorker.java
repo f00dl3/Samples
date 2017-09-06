@@ -479,7 +479,7 @@ public class xsWorker {
 					jStationData.put("WZLV", tWZLV).put("FZLV", tFZLV).put("CCL", tCCL).put("SLCL", df.format(tSLCL));
 				} else { thisNullCounterModel++; }
 
-				if (thisNullCounter != 10) {
+				if (thisNullCounter != 11) {
 					String thisJSONstring = jStationObj.toString().substring(1);
 					thisJSONstring = thisJSONstring.substring(0, thisJSONstring.length()-1)+",";
 					try { ShellUtils.varToFile(thisJSONstring, jsonOutFile, false); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
