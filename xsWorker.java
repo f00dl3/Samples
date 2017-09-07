@@ -1,7 +1,7 @@
 /* XML Stations v7
 Worker Process 
 Conceived 2017-09-02
-Updated 2017-09-06 */
+Updated 2017-09-07 */
 
 package jASUtils;
 
@@ -24,7 +24,7 @@ import org.xml.sax.SAXException;
 
 import org.json.*;
 
-import jASUtils.ShellUtils;
+import jASUtils.StumpJunk;
 
 public class xsWorker {
 
@@ -34,12 +34,16 @@ public class xsWorker {
 
 	public static void main(String args[]) {
 
-		final String stationType = args[0];
-		final String region = args[1];
-		final String xsTmp = "/dev/shm/xsTmp";
+		final String xsTmp = args[0];
+		final String stationType = args[1];
+		final String region = args[2];
 		final File xsTmpGrib2Obj = new File(xsTmp+"/grib2");
 		final File jsonOutFile = new File(xsTmp+"/output_"+stationType+"_"+region+".json");
 		final String wgrib2Path = "/home/astump/src/grib2/wgrib2";
+
+		int thisNullCounter = 0;
+		int thisNullCounterModel = 0;
+		int tVars = 0;
 
 		DecimalFormat df = new DecimalFormat("#.###");
 		df.setRoundingMode(RoundingMode.CEILING);
@@ -79,16 +83,16 @@ public class xsWorker {
 				pointInputString = pointInputString+"-lon "+thisGeo+" ";
 			}
 
-			try { ShellUtils.varToFile(pointInputString, pointInputDump, false); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
+			try { StumpJunk.varToFile(pointInputString, pointInputDump, false); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 
 			System.out.println(" --> Parsing GRIB2 data HRRR for region "+region);
-			try { ShellUtils.runProcessOutFile("\""+wgrib2Path+"/wgrib2\" "+xsTmp+"/grib2/HRRR "+pointInputString+" -match \":("+hrrrMatch+"):\"", hrrrSounding, false); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
+			try { StumpJunk.runProcessOutFile("\""+wgrib2Path+"/wgrib2\" "+xsTmp+"/grib2/HRRR "+pointInputString+" -match \":("+hrrrMatch+"):\"", hrrrSounding, false); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 
 			System.out.println(" --> Parsing GRIB2 data RAP for region "+region);
-			try { ShellUtils.runProcessOutFile("\""+wgrib2Path+"/wgrib2\" "+xsTmp+"/grib2/RAP "+pointInputString+" -match \":("+rapMatch+"):\"", rapSounding, false); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
+			try { StumpJunk.runProcessOutFile("\""+wgrib2Path+"/wgrib2\" "+xsTmp+"/grib2/RAP "+pointInputString+" -match \":("+rapMatch+"):\"", rapSounding, false); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 			
-			ShellUtils.sedFileReplace(hrrrSounding.getPath(), ":lon", ",lon");
-			ShellUtils.sedFileReplace(rapSounding.getPath(), ":lon", ",lon");
+			StumpJunk.sedFileReplace(hrrrSounding.getPath(), ":lon", ",lon");
+			StumpJunk.sedFileReplace(rapSounding.getPath(), ":lon", ",lon");
 
 			for (String thisStation : wxStations) {
 
@@ -103,19 +107,17 @@ public class xsWorker {
 				JSONObject jStationData = new JSONObject();
 				jStationObj.put(thisStation, jStationData);
 
-				int thisNullCounter = 0;
-				int thisNullCounterModel = 0;
-				String tDewpointF = null;
-				String tPressureMb = null;
-				String tRelativeHumidity = null;
-				String tTempF = null;
-				String tTimeString = null;
-				String tWeather = null;
-				String tWindDegrees = null;
-				String tWindDirection = null;
-				String tWindSpeed = null;
-				String tWindGust = null;
-				String tVisibility = null;
+				String tDewpointF = null; tVars++;
+				String tPressureMb = null; tVars++;
+				String tRelativeHumidity = null; tVars++;
+				String tTempF = null; tVars++;
+				String tTimeString = null; tVars++;
+				String tWeather = null; tVars++;
+				String tWindDegrees = null; tVars++;
+				String tWindDirection = null; tVars++;
+				String tWindSpeed = null; tVars++;
+				String tWindGust = null; tVars++;
+				String tVisibility = null; tVars++;
 
 				Scanner xmlScanner = null; try {		
 					xmlScanner = new Scanner(xmlOut);
@@ -136,17 +138,17 @@ public class xsWorker {
 				}
 				catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 			
-				if (tTempF != null) { jStationData.put("Temperature", tTempF); } else { thisNullCounter++; }
-				if (tDewpointF != null) { jStationData.put("Dewpoint", tDewpointF); } else { thisNullCounter++; }
-				if (tRelativeHumidity != null) { jStationData.put("RelativeHumidity", tRelativeHumidity); } else { thisNullCounter++; }
-				if (tPressureMb != null) { jStationData.put("Pressure", tPressureMb); } else { thisNullCounter++; }
-				if (tTimeString != null) { jStationData.put("TimeString", tTimeString); } else { thisNullCounter++; }
-				if (tVisibility != null) { jStationData.put("Visibility", tVisibility); } else { thisNullCounter++; }
-				if (tWeather != null) { jStationData.put("Weather", tWeather); } else { thisNullCounter++; }
-				if (tWindDegrees != null) { jStationData.put("WindDegrees", tWindDegrees); } else { thisNullCounter++; }
-				if (tWindDirection != null) { jStationData.put("WindDirection", tWindDirection); } else { thisNullCounter++; }
-				if (tWindGust != null) { jStationData.put("WindGust", tWindGust); } else { thisNullCounter++; }
-				if (tWindSpeed != null) { jStationData.put("WindSpeed", tWindSpeed); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tTempF)) { jStationData.put("Temperature", tTempF); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tDewpointF)) { jStationData.put("Dewpoint", tDewpointF); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tRelativeHumidity)) { jStationData.put("RelativeHumidity", tRelativeHumidity); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tPressureMb)) { jStationData.put("Pressure", tPressureMb); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tTimeString)) { jStationData.put("TimeString", tTimeString); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tVisibility)) { jStationData.put("Visibility", tVisibility); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWeather)) { jStationData.put("Weather", tWeather); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindDegrees)) { jStationData.put("WindDegrees", tWindDegrees); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindDirection)) { jStationData.put("WindDirection", tWindDirection); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindGust)) { jStationData.put("WindGust", tWindGust); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindSpeed)) { jStationData.put("WindSpeed", tWindSpeed); } else { thisNullCounter++; }
 
 				double tRH100 = 0.001; double tRH125 = 0.001; double tRH150 = 0.001; double tRH175 = 0.001; 
 				double tRH200 = 0.001; double tRH225 = 0.001; double tRH250 = 0.001; double tRH275 = 0.001; 
@@ -479,10 +481,10 @@ public class xsWorker {
 					jStationData.put("WZLV", tWZLV).put("FZLV", tFZLV).put("CCL", tCCL).put("SLCL", df.format(tSLCL));
 				} else { thisNullCounterModel++; }
 
-				if (thisNullCounter != 11) {
+				if (thisNullCounter != tVars) {
 					String thisJSONstring = jStationObj.toString().substring(1);
 					thisJSONstring = thisJSONstring.substring(0, thisJSONstring.length()-1)+",";
-					try { ShellUtils.varToFile(thisJSONstring, jsonOutFile, false); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
+					try { StumpJunk.varToFile(thisJSONstring, jsonOutFile, false); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 					System.out.println(" -> Completed: "+thisStation+" ("+stationType+")");
 					if (thisNullCounterModel == 2) { System.out.println("!!! WARN: NO MODEL DATA FOR Station "+thisStation+" !"); }
 				} else { System.out.println("!!! WARN: NO DATA FOR Station "+thisStation+" !"); }
@@ -515,18 +517,17 @@ public class xsWorker {
 				JSONObject jStationData = new JSONObject();
 				jStationObj.put(thisStation, jStationData);
 
-				int thisNullCounter = 0;
-				String tDewpointF = null;
-				String tPressureMb = null;
-				String tRelativeHumidity = null;
-				String tTempF = null;
-				String tTimeString = null;
-				String tWeather = null;
-				String tWindDegrees = null;
-				String tWindDirection = null;
-				String tWindSpeed = null;
-				String tWindGust = null;
-				String tVisibility = null;
+				String tDewpointF = null; tVars++;
+				String tPressureMb = null; tVars++;
+				String tRelativeHumidity = null; tVars++;
+				String tTempF = null; tVars++;
+				String tTimeString = null; tVars++;
+				String tWeather = null; tVars++;
+				String tWindDegrees = null; tVars++;
+				String tWindDirection = null; tVars++;
+				String tWindSpeed = null; tVars++;
+				String tWindGust = null; tVars++;
+				String tVisibility = null; tVars++;
 
 				Scanner xmlScanner = null; try {		
 					xmlScanner = new Scanner(xmlOut);
@@ -547,21 +548,21 @@ public class xsWorker {
 				}
 				catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 
-				if (tTempF != null) { jStationData.put("Temperature", tTempF); } else { thisNullCounter++; }
-				if (tDewpointF != null) { jStationData.put("Dewpoint", tDewpointF); } else { thisNullCounter++; }
-				if (tRelativeHumidity != null) { jStationData.put("RelativeHumidity", tRelativeHumidity); } else { thisNullCounter++; }
-				if (tPressureMb != null) { jStationData.put("Pressure", tPressureMb); } else { thisNullCounter++; }
-				if (tTimeString != null) { jStationData.put("TimeString", tTimeString); } else { thisNullCounter++; }
-				if (tVisibility != null) { jStationData.put("Visibility", tVisibility); } else { thisNullCounter++; }
-				if (tWeather != null) { jStationData.put("Weather", tWeather); } else { thisNullCounter++; }
-				if (tWindDegrees != null) { jStationData.put("WindDegrees", tWindDegrees); } else { thisNullCounter++; }
-				if (tWindGust != null) { jStationData.put("WindGust", tWindGust); } else { thisNullCounter++; }
-				if (tWindSpeed != null) { jStationData.put("WindSpeed", tWindSpeed); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tTempF)) { jStationData.put("Temperature", tTempF); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tDewpointF)) { jStationData.put("Dewpoint", tDewpointF); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tRelativeHumidity)) { jStationData.put("RelativeHumidity", tRelativeHumidity); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tPressureMb)) { jStationData.put("Pressure", tPressureMb); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tTimeString)) { jStationData.put("TimeString", tTimeString); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tVisibility)) { jStationData.put("Visibility", tVisibility); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWeather)) { jStationData.put("Weather", tWeather); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindDegrees)) { jStationData.put("WindDegrees", tWindDegrees); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindGust)) { jStationData.put("WindGust", tWindGust); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindSpeed)) { jStationData.put("WindSpeed", tWindSpeed); } else { thisNullCounter++; }
 
-				if (thisNullCounter != 10) {
+				if (thisNullCounter != tVars) {
 					String thisJSONstring = jStationObj.toString().substring(1);
 					thisJSONstring = thisJSONstring.substring(0, thisJSONstring.length()-1)+",";
-					try { ShellUtils.varToFile(thisJSONstring, jsonOutFile, true); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
+					try { StumpJunk.varToFile(thisJSONstring, jsonOutFile, true); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 					System.out.println(" -> Completed: "+thisStation+" ("+stationType+")");
 				} else { System.out.println("!!! WARN: NO DATA FOR Station "+thisStation+" !"); }
 
@@ -574,7 +575,7 @@ public class xsWorker {
 		if(stationType.equals("METAR")) {
 
 			List<String> wxStations = new ArrayList<String>();
-			final String getStationListSQL = "SELECT Station FROM WxObs.Stations WHERE Active=1 AND Region='"+region+"' AND Priority = 5 ORDER BY Priority, Station DESC;";
+			final String getStationListSQL = "SELECT Station FROM WxObs.Stations WHERE Active=1 AND Region LIKE '"+region+"%' AND Priority = 5 ORDER BY Priority, Station DESC;";
 			final File xmlMetarsIn = new File(xsTmp+"/metars.xml");
 
 			try (
@@ -591,17 +592,17 @@ public class xsWorker {
 
 				for (String thisStation : wxStations) {
 
-					int thisNullCounter = 0;
-					String tDewpointC = null;
-					String tPressureMb = null;
-					String tTempC = null;
-					String tTimeString = null;
-					String tWeather = null;
-					String tWindDegrees = null;
-					String tWindSpeed = null;
-					String tVisibility = null;
-					String tPrecipIn = null;
-					String tRawMETAR = null;
+					String tDewpointC = null; tVars++;
+					String tPressureMb = null; tVars++;
+					String tTempC = null; tVars++;
+					String tTimeString = null; tVars++;
+					String tWeather = null; tVars++;
+					String tWindDegrees = null; tVars++;
+					String tWindSpeed = null; tVars++;
+					String tVisibility = null; tVars++;
+					String tPrecipIn = null; tVars++;
+					String tRawMETAR = null; tVars++;
+					String tFlightCat = null; tVars++;
 
 					try {
 						XPathFactory xPathFactory = XPathFactory.newInstance();
@@ -616,6 +617,7 @@ public class xsWorker {
 						tVisibility = xpath.evaluate("//*[station_id='"+thisStation+"']/visibility_statute_mi", xmlDoc);
 						tPrecipIn = xpath.evaluate("//*[station_id='"+thisStation+"']/precip_in", xmlDoc);
 						tRawMETAR = xpath.evaluate("//*[station_id='"+thisStation+"']/raw_text", xmlDoc);
+						tFlightCat = xpath.evaluate("//*[station_id='"+thisStation+"']/flight_category", xmlDoc);
 
 					}
 					catch (XPathException xpx) { xpx.printStackTrace(); }
@@ -624,21 +626,22 @@ public class xsWorker {
 					JSONObject jStationData = new JSONObject();
 					jStationObj.put(thisStation, jStationData);
 
-					if (tTempC != null) { jStationData.put("Temperature", tTempC); } else { thisNullCounter++; }
-					if (tDewpointC != null) { jStationData.put("Dewpoint", tDewpointC); } else { thisNullCounter++; }
-					if (tPressureMb != null) { jStationData.put("Pressure", tPressureMb); } else { thisNullCounter++; }
-					if (tTimeString != null) { jStationData.put("TimeString", tTimeString); } else { thisNullCounter++; }
-					if (tVisibility != null) { jStationData.put("Visibility", tVisibility); } else { thisNullCounter++; }
-					if (tWeather != null) { jStationData.put("Weather", tWeather); } else { thisNullCounter++; }
-					if (tWindDegrees != null) { jStationData.put("WindDegrees", tWindDegrees); } else { thisNullCounter++; }
-					if (tWindSpeed != null) { jStationData.put("WindSpeed", tWindSpeed); } else { thisNullCounter++; }
-					if (tPrecipIn != null) { jStationData.put("PrecipIn", tPrecipIn); } else { thisNullCounter++; }
-					if (tRawMETAR != null) { jStationData.put("RawMETAR", tRawMETAR); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tTempC)) { jStationData.put("Temperature", tTempC); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tDewpointC)) { jStationData.put("Dewpoint", tDewpointC); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tPressureMb)) { jStationData.put("Pressure", tPressureMb); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tTimeString)) { jStationData.put("TimeString", tTimeString); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tVisibility)) { jStationData.put("Visibility", tVisibility); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tWeather)) { jStationData.put("Weather", tWeather); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tWindDegrees)) { jStationData.put("WindDegrees", tWindDegrees); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tWindSpeed)) { jStationData.put("WindSpeed", tWindSpeed); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tPrecipIn)) { jStationData.put("PrecipIn", tPrecipIn); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tRawMETAR)) { jStationData.put("RawMETAR", tRawMETAR); } else { thisNullCounter++; }
+					if (StumpJunk.isSet(tFlightCat)) { jStationData.put("FlightCategory", tFlightCat); } else { thisNullCounter++; }
 
-					if (thisNullCounter != 10) {
+					if (thisNullCounter != tVars) {
 						String thisJSONstring = jStationObj.toString().substring(1);
 						thisJSONstring = thisJSONstring.substring(0, thisJSONstring.length()-1)+",";
-						try { ShellUtils.varToFile(thisJSONstring, jsonOutFile, true); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
+						try { StumpJunk.varToFile(thisJSONstring, jsonOutFile, true); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 						System.out.println(" -> Completed: "+thisStation+" ("+stationType+")");
 					} else { System.out.println("!!! WARN: NO DATA FOR Station "+thisStation+" !"); }
 					
@@ -671,24 +674,23 @@ public class xsWorker {
 				JSONObject jStationData = new JSONObject();
 				jStationObj.put(thisStation, jStationData);
 
-				int thisNullCounter = 0;
-				String tDewpointF = null;
-				String tPressureMb = null;
-				String tRelativeHumidity = null;
-				String tTempF = null;
-				String tTimeString = null;
-				String tWaterTempF = null;
-				String tWaveDegrees = null;
-				String tWaveDirection = null;
-				String tWaveHeight = null;
-				String tWavePeriodAvg = null;
-				String tWavePeriodDom = null;
-				String tWeather = null;
-				String tWindDegrees = null;
-				String tWindDirection = null;
-				String tWindSpeed = null;
-				String tWindGust = null;
-				String tVisibility = null;
+				String tDewpointF = null; tVars++;
+				String tPressureMb = null; tVars++;
+				String tRelativeHumidity = null; tVars++;
+				String tTempF = null; tVars++;
+				String tTimeString = null; tVars++;
+				String tWaterTempF = null; tVars++;
+				String tWaveDegrees = null; tVars++;
+				String tWaveDirection = null; tVars++;
+				String tWaveHeight = null; tVars++;
+				String tWavePeriodAvg = null; tVars++;
+				String tWavePeriodDom = null; tVars++;
+				String tWeather = null; tVars++;
+				String tWindDegrees = null; tVars++;
+				String tWindDirection = null; tVars++;
+				String tWindSpeed = null; tVars++;
+				String tWindGust = null; tVars++;
+				String tVisibility = null; tVars++;
 
 				Scanner xmlScanner = null; try {		
 					xmlScanner = new Scanner(xmlOut);
@@ -715,28 +717,28 @@ public class xsWorker {
 				}
 				catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 			
-				if (tTempF != null) { jStationData.put("Temperature", tTempF); } else { thisNullCounter++; }
-				if (tDewpointF != null) { jStationData.put("Dewpoint", tDewpointF); } else { thisNullCounter++; }
-				if (tRelativeHumidity != null) { jStationData.put("RelativeHumidity", tRelativeHumidity); } else { thisNullCounter++; }
-				if (tPressureMb != null) { jStationData.put("Pressure", tPressureMb); } else { thisNullCounter++; }
-				if (tTimeString != null) { jStationData.put("TimeString", tTimeString); } else { thisNullCounter++; }
-				if (tVisibility != null) { jStationData.put("Visibility", tVisibility); } else { thisNullCounter++; }
-				if (tWaterTempF != null) { jStationData.put("WaterTemp", tWaterTempF); } else { thisNullCounter++; }
-				if (tWaveDegrees != null) { jStationData.put("WaveDegrees", tWaveDegrees); } else { thisNullCounter++; }
-				if (tWaveDirection != null) { jStationData.put("WaveDirection", tWaveDirection); } else { thisNullCounter++; }
-				if (tWaveHeight != null) { jStationData.put("WaveHeight", tWaveHeight); } else { thisNullCounter++; }
-				if (tWavePeriodAvg != null) { jStationData.put("WavePeriodAverage", tWavePeriodAvg); } else { thisNullCounter++; }
-				if (tWavePeriodDom != null) { jStationData.put("WavePeriodDominant", tWavePeriodDom); } else { thisNullCounter++; }
-				if (tWeather != null) { jStationData.put("Weather", tWeather); } else { thisNullCounter++; }
-				if (tWindDegrees != null) { jStationData.put("WindDegrees", tWindDegrees); } else { thisNullCounter++; }
-				if (tWindDirection != null) { jStationData.put("WindDirection", tWindDirection); } else { thisNullCounter++; }
-				if (tWindGust != null) { jStationData.put("WindGust", tWindGust); } else { thisNullCounter++; }
-				if (tWindSpeed != null) { jStationData.put("WindSpeed", tWindSpeed); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tTempF)) { jStationData.put("Temperature", tTempF); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tDewpointF)) { jStationData.put("Dewpoint", tDewpointF); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tRelativeHumidity)) { jStationData.put("RelativeHumidity", tRelativeHumidity); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tPressureMb)) { jStationData.put("Pressure", tPressureMb); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tTimeString)) { jStationData.put("TimeString", tTimeString); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tVisibility)) { jStationData.put("Visibility", tVisibility); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWaterTempF)) { jStationData.put("WaterTemp", tWaterTempF); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWaveDegrees)) { jStationData.put("WaveDegrees", tWaveDegrees); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWaveDirection)) { jStationData.put("WaveDirection", tWaveDirection); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWaveHeight)) { jStationData.put("WaveHeight", tWaveHeight); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWavePeriodAvg)) { jStationData.put("WavePeriodAverage", tWavePeriodAvg); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWavePeriodDom)) { jStationData.put("WavePeriodDominant", tWavePeriodDom); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWeather)) { jStationData.put("Weather", tWeather); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindDegrees)) { jStationData.put("WindDegrees", tWindDegrees); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindDirection)) { jStationData.put("WindDirection", tWindDirection); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindGust)) { jStationData.put("WindGust", tWindGust); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindSpeed)) { jStationData.put("WindSpeed", tWindSpeed); } else { thisNullCounter++; }
 
-				if (thisNullCounter != 17) {
+				if (thisNullCounter != tVars) {
 					String thisJSONstring = jStationObj.toString().substring(1);
 					thisJSONstring = thisJSONstring.substring(0, thisJSONstring.length()-1)+",";
-					try { ShellUtils.varToFile(thisJSONstring, jsonOutFile, true); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
+					try { StumpJunk.varToFile(thisJSONstring, jsonOutFile, true); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 					System.out.println(" -> Completed: "+thisStation+" ("+stationType+")");
 				} else { System.out.println("!!! WARN: NO DATA FOR Station "+thisStation+" !"); }
 					
@@ -765,24 +767,23 @@ public class xsWorker {
 				JSONObject jStationData = new JSONObject();
 				jStationObj.put(thisStation, jStationData);
 				
-				int thisNullCounter = 0;
-				String tDewpointF = null;
-				String tPressureMb = null;
-				String tRelativeHumidity = null;
-				String tTempF = null;
-				String tTimeString = null;
-				String tWaterTempF = null;
-				String tWaveDegrees = null;
-				String tWaveDirection = null;
-				String tWaveHeight = null;
-				String tWavePeriodAvg = null;
-				String tWavePeriodDom = null;
-				String tWeather = null;
-				String tWindDegrees = null;
-				String tWindDirection = null;
-				String tWindSpeed = null;
-				String tWindGust = null;
-				String tVisibility = null;
+				String tDewpointF = null; tVars++;
+				String tPressureMb = null; tVars++;
+				String tRelativeHumidity = null; tVars++;
+				String tTempF = null; tVars++;
+				String tTimeString = null; tVars++;
+				String tWaterTempF = null; tVars++;
+				String tWaveDegrees = null; tVars++;
+				String tWaveDirection = null; tVars++;
+				String tWaveHeight = null; tVars++;
+				String tWavePeriodAvg = null; tVars++;
+				String tWavePeriodDom = null; tVars++;
+				String tWeather = null; tVars++;
+				String tWindDegrees = null; tVars++;
+				String tWindDirection = null; tVars++;
+				String tWindSpeed = null; tVars++;
+				String tWindGust = null; tVars++;
+				String tVisibility = null; tVars++;
 
 				Scanner xmlScanner = null; try {		
 					xmlScanner = new Scanner(xmlOut);
@@ -809,28 +810,28 @@ public class xsWorker {
 				}
 				catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 			
-				if (tTempF != null) { jStationData.put("Temperature", tTempF); } else { thisNullCounter++; }
-				if (tDewpointF != null) { jStationData.put("Dewpoint", tDewpointF); } else { thisNullCounter++; }
-				if (tRelativeHumidity != null) { jStationData.put("RelativeHumidity", tRelativeHumidity); } else { thisNullCounter++; }
-				if (tPressureMb != null) { jStationData.put("Pressure", tPressureMb); } else { thisNullCounter++; }
-				if (tTimeString != null) { jStationData.put("TimeString", tTimeString); } else { thisNullCounter++; }
-				if (tVisibility != null) { jStationData.put("Visibility", tVisibility); } else { thisNullCounter++; }
-				if (tWaterTempF != null) { jStationData.put("WaterTemp", tWaterTempF); } else { thisNullCounter++; }
-				if (tWaveDegrees != null) { jStationData.put("WaveDegrees", tWaveDegrees); } else { thisNullCounter++; }
-				if (tWaveDirection != null) { jStationData.put("WaveDirection", tWaveDirection); } else { thisNullCounter++; }
-				if (tWaveHeight != null) { jStationData.put("WaveHeight", tWaveHeight); } else { thisNullCounter++; }
-				if (tWavePeriodAvg != null) { jStationData.put("WavePeriodAverage", tWavePeriodAvg); } else { thisNullCounter++; }
-				if (tWavePeriodDom != null) { jStationData.put("WavePeriodDominant", tWavePeriodDom); } else { thisNullCounter++; }
-				if (tWeather != null) { jStationData.put("Weather", tWeather); } else { thisNullCounter++; }
-				if (tWindDegrees != null) { jStationData.put("WindDegrees", tWindDegrees); } else { thisNullCounter++; }
-				if (tWindDirection != null) { jStationData.put("WindDirection", tWindDirection); } else { thisNullCounter++; }
-				if (tWindGust != null) { jStationData.put("WindGust", tWindGust); } else { thisNullCounter++; }
-				if (tWindSpeed != null) { jStationData.put("WindSpeed", tWindSpeed); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tTempF)) { jStationData.put("Temperature", tTempF); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tDewpointF)) { jStationData.put("Dewpoint", tDewpointF); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tRelativeHumidity)) { jStationData.put("RelativeHumidity", tRelativeHumidity); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tPressureMb)) { jStationData.put("Pressure", tPressureMb); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tTimeString)) { jStationData.put("TimeString", tTimeString); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tVisibility)) { jStationData.put("Visibility", tVisibility); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWaterTempF)) { jStationData.put("WaterTemp", tWaterTempF); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWaveDegrees)) { jStationData.put("WaveDegrees", tWaveDegrees); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWaveDirection)) { jStationData.put("WaveDirection", tWaveDirection); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWaveHeight)) { jStationData.put("WaveHeight", tWaveHeight); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWavePeriodAvg)) { jStationData.put("WavePeriodAverage", tWavePeriodAvg); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWavePeriodDom)) { jStationData.put("WavePeriodDominant", tWavePeriodDom); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWeather)) { jStationData.put("Weather", tWeather); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindDegrees)) { jStationData.put("WindDegrees", tWindDegrees); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindDirection)) { jStationData.put("WindDirection", tWindDirection); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindGust)) { jStationData.put("WindGust", tWindGust); } else { thisNullCounter++; }
+				if (StumpJunk.isSet(tWindSpeed)) { jStationData.put("WindSpeed", tWindSpeed); } else { thisNullCounter++; }
 
-				if (thisNullCounter != 17) {
+				if (thisNullCounter != tVars) {
 					String thisJSONstring = jStationObj.toString().substring(1);
 					thisJSONstring = thisJSONstring.substring(0, thisJSONstring.length()-1)+",";
-					try { ShellUtils.varToFile(thisJSONstring, jsonOutFile, true); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
+					try { StumpJunk.varToFile(thisJSONstring, jsonOutFile, true); } catch (FileNotFoundException fnf) { fnf.printStackTrace(); }
 					System.out.println(" -> Completed: "+thisStation+" ("+stationType+")");
 				} else { System.out.println("!!! WARN: NO DATA FOR Station "+thisStation+" !"); }
 					
